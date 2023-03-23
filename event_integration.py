@@ -11,8 +11,10 @@ def delta(x, y):
 def voxel2patch(voxel_width, voxel_height, voxel_list):
     """
     Integrates the events contained in a voxel to a 2D patch
-    :param voxel_list: list of voxels to be integrated with Np objects
-    :return: patch_list: tensor of flattened patches resulting from voxel list (Np x D)
+    :param voxel_width: width of voxels (int), should be constant for all voxels
+    :param voxel_height: height of voxels (int), should be constant for all voxels
+    :param voxel_list: list of Np voxels to be integrated, voxels should be resembled as lists with event locations and data
+    :return: patch_list: tensor of flattened patches resulting from voxel list (Np x voxel_width*voxel_height)
     """
 
     print(len(voxel_list), 'voxels are being converted to patches.')
