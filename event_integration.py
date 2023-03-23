@@ -8,7 +8,7 @@ def delta(x, y):
     else:
         return 0
 
-def voxel2patch(voxel_list):
+def voxel2patch(voxel_width, voxel_height, voxel_list):
     """
     Integrates the events contained in a voxel to a 2D patch
     :param voxel_list: list of voxels to be integrated with Np objects
@@ -17,15 +17,13 @@ def voxel2patch(voxel_list):
 
     print(len(voxel_list), 'voxels are being converted to patches.')
     flatten = nn.Flatten()
-    patch_list = torch.zeros([len(voxel_list)])
+    patch_list = torch.zeros(len(voxel_list), voxel_width, voxel_height)
     print(patch_list)
     i = 0
     for voxel in voxel_list:
-        voxel_height = voxel[0]
-        voxel_width = voxel[1]
-        event_list = voxel[3]
+        event_list = voxel
         # Create patch with voxel width and height
-        patch = torch.zeros([voxel_width, voxel_height])
+        patch = torch.zeros(voxel_width, voxel_height)
 
         # Determine patch values according to formula from paper
         for x in range(voxel_width):
@@ -40,8 +38,8 @@ def voxel2patch(voxel_list):
     # Return list of flattened patches
     return flatten(patch_list)
 
-
-voxel_list = [[1, 2, 3, [[0.2, 0.3, 0.4, -1], [0.4, 0.1, 0.1, 1]]]]
-pl = voxel2patch(voxel_list)
-print(pl)
+# "Unit Test"
+# voxel_list = [[[0.2, 0.3, 0.4, -1], [0.4, 0.1, 0.1, 1], [1, 1, 2, 1]]]
+# pl = voxel2patch(2, 3, voxel_list)
+# print(pl)
 
