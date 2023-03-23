@@ -242,3 +242,5 @@ class VGCNN_MFRL(nn.Module):
 
         return output_s
 
+
+print("hello")
