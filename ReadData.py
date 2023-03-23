@@ -27,4 +27,4 @@ def load(raw_file: str) -> Data:
         x, pos = events[:, -1:], events[:, :3]   # x = polarity, pos = spatio-temporal position
         return Data(x=x, pos=pos)
 
-print("Things", load("image_0005.bin"))
+print("Thing", load("image_0005.bin"))
