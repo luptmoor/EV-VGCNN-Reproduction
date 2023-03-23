@@ -153,6 +153,7 @@ class relation_net_multi(nn.Module):
             neighbor_idx_list.append(neighbor_index_new)
         return neighbor_idx_list
 
+# Network class
 class VGCNN_MFRL(nn.Module):
     def __init__(self, feat_dim=25, num_classes = 101, num_neighbors = [10, 25]):
         super().__init__()
@@ -187,7 +188,7 @@ class VGCNN_MFRL(nn.Module):
                                    nn.BatchNorm1d(512),
                                    nn.LeakyReLU(negative_slope=0.2))
 
-        """pred stage"""
+        """Classifier"""
         self.fc_1 = nn.Sequential(
             nn.Linear(1024, 512, bias=False),
             nn.BatchNorm1d(512),
