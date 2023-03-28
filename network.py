@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from event_integration import voxel2patch
+from dataloader import load_dataloader
 import numpy as np
-import sys
-import event_integration
+
 def square_distance(src, dst):
     B, N, _ = src.shape
     _, M, _ = dst.shape
@@ -249,7 +249,7 @@ class VGCNN_MFRL(nn.Module):
 
 # 1. Load Data (Serban)
 # 2. Voxelize (Serban)
-#    example: xc  yc tc   x0 y0 t0 p0   x1  y1 t1 p1 (events)
+#    example: xc  yc tc   x0 y0 t0 p0   x1  y1 t1 p1 (events)           xc means x-coordinate of the voxel
 voxel_list = [[1, 2, 3, [[1, 2, 3, -1], [2, 3, 1, 1]]]]
 voxel_width = 3
 voxel_height = 2
@@ -262,13 +262,14 @@ feature_vector = voxel2patch(voxel_width, voxel_height, voxel_list[:][3])
 # (4) Feed forward into VGCNN (not actually needed here but cool to check if it works)
 model_VGCNN = VGCNN_MFRL()
 prediction = model_VGCNN.forward(coordinate_vector, feature_vector)
+print(prediction)
 
 # 5 Data Loader (pair input vectors and ground truth vectors, also specify batch size)
-training_data_loader = None  # to be implemented
+training_data_loader, validation_data_loader = load_dataloader(batch_size=32)  # to be implemented, comment from here onwards if annoying
 
 # 5 Training loop (Sergio ( ͡° ͜ʖ ͡°) )
 
-num_epochs = 20
+num_epochs = 20  # (idk if ideal)
 optimizer = optim.SGD(model_VGCNN.parameters(), lr=1e-3) # Stochastic Gradient Descent (idk if this is ideal)
 loss_fn = nn.MSELoss()  # Mean-squared error (idk if this ideal, but probably)
 
