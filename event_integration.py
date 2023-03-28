@@ -24,7 +24,7 @@ def voxel2patch(voxel_width, voxel_height, voxel_list):
     print(patch_list)
     i = 0
     for voxel in voxel_list:
-        event_list = voxel
+        event_list = voxel # Voxels are just lists of the events inside them
         # Create patch with voxel width and height
         patch = torch.zeros(voxel_width, voxel_height)
 
