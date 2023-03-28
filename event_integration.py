@@ -19,6 +19,7 @@ def voxel2patch(voxel_width, voxel_height, voxel_list):
 
     print(len(voxel_list), 'voxels are being converted to patches.')
     flatten = nn.Flatten()
+
     patch_list = torch.zeros(len(voxel_list), voxel_width, voxel_height)
     print(patch_list)
     i = 0
