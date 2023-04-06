@@ -270,7 +270,7 @@ training_data_loader, validation_data_loader = load_dataloader(batch_size=32)  #
 # 5 Training loop (Sergio ( ͡° ͜ʖ ͡°) )
 
 num_epochs = 20  # (idk if ideal)
-optimizer = optim.SGD(model_VGCNN.parameters(), lr=1e-3) # Stochastic Gradient Descent (idk if this is ideal)
+optimizer = optim.Adam(model_VGCNN.parameters(), lr=1e-3) # Stochastic Gradient Descent (idk if this is ideal)
 loss_fn = nn.MSELoss()  # Mean-squared error (idk if this ideal, but probably)
 
 for epoch in range(num_epochs):
