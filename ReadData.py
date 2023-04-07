@@ -33,7 +33,6 @@ def load(raw_file: str):
         # x, pos = events[:, -1:], events[:, :3]   # x = polarity, pos = spatio-temporal position
         # return Data(x=x, pos=pos)
 
-import numpy as np
 
 def voxelize(events, resolution, duration):
     """
