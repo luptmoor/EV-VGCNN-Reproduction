@@ -5,7 +5,7 @@ import numpy as np
 import os
 import torch
 
-from torch_geometric.data import Data
+#from torch_geometric.data import Data
 
 
 def load(raw_file: str):
@@ -86,13 +86,13 @@ def voxelize(events, nx, ny, nt):
         print('voxel ', x)
         for y in range(ny):
             for t in range(nt):
-                slice = events[x * dx <= events[0] <= (x + 1) * dx, :, :]
-                slice = slice[:, y * dy <= events[1] <= (y + 1) * dy, :]
-                slice = slice[:, :, t * dt <= events[2] <= (t + 1) * dt]
+                selection = events[x * dx <= events[0] <= (x + 1) * dx, :, :]
+                selection = selection[:, y * dy <= events[1] <= (y + 1) * dy, :]
+                selection = selection[:, :, t * dt <= events[2] <= (t + 1) * dt]
 
                 event_list = []
                 # change coordinates of events to local coordinates
-                for event in slice:
+                for event in selection:
                     event[0] -= x * dx
                     event[1] -= y * dy
                     event[2] -= t * dt
@@ -105,7 +105,7 @@ def voxelize(events, nx, ny, nt):
 
                     event_list.append(event)
 
-                voxel_list.append([x, y, t, slice])
+                voxel_list.append([x, y, t, selection])
 
     return voxel_list
 
