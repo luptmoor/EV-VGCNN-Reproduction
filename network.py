@@ -3,9 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from event_integration import voxel2patch
-from dataloader import load_dataloader
+#from dataloader import load_dataloader
 import numpy as np
 
+
+from ReadData import load, voxelize
 def square_distance(src, dst):
     B, N, _ = src.shape
     _, M, _ = dst.shape
@@ -250,12 +252,17 @@ class VGCNN_MFRL(nn.Module):
 # 1. Load Data (Serban)
 # 2. Voxelize (Serban)
 #    example: xc  yc tc   x0 y0 t0 p0   x1  y1 t1 p1 (events)           xc means x-coordinate of the voxel
-voxel_list = [[1, 2, 3, [[1, 2, 3, -1], [2, 3, 1, 1]]]]
-voxel_width = 3
-voxel_height = 2
+#voxel_list = [[1, 2, 3, [[1, 2, 3, -1], [2, 3, 1, 1]]]]
+vec = torch.Tensor([0, 2, 3])
+data = load("image_0005.bin")
+voxel_list = voxelize(data, 10, 10, 10)
+
+voxel_width = 23.3
+voxel_height = 10
 # 3. Graph construction:
 # 3A Coordinate vector (takes first 3 entries of voxel list)
-coordinate_vector = torch.tensor(voxel_list[:][:2])
+
+coordinate_vector = torch.Tensor(voxel_list[:][:2])
 # 3B Feature vector (takes last entry of voxel_list (events) and integrates them)
 feature_vector = voxel2patch(voxel_width, voxel_height, voxel_list[:][3])
 

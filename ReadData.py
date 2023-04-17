@@ -5,6 +5,7 @@ import numpy as np
 import os
 import torch
 import matplotlib.pyplot as plt
+from event_integration import  voxel2patch
 
 # from torch_geometric.data import Data
 
@@ -22,7 +23,11 @@ def load(raw_file: str):
     all_ts = all_ts / 1e6  # µs -> s
     all_p = all_p.astype(np.float64)
     all_p[all_p == 0] = -1
-    events = np.array([all_x, all_y, all_ts, all_p])
+    #events = np.array([all_x, all_y, all_ts, all_p])
+    events = np.stack([all_x, all_y, all_ts, all_p], axis=1)
+    print(events.shape)
+    print(events[0])
+    print(events[1])
     # print(" y ", all_y)
     # print(" x ", all_x)
     # print(" p ", all_p)
@@ -87,28 +92,24 @@ def voxelize(events, nx, ny, nt):
         print('voxel ', x)
         for y in range(ny):
             for t in range(nt):
+                selection = []
+                x_min = x * dx
+                x_max = (x + 1) * dx
 
-                x_min = x * dx + min(events[0])
-                x_max = (x + 1) * dx + min(events[0])
+                y_min = y * dy
+                y_max = (y + 1) * dy
 
-                y_min = y * dy + min(events[1])
-                y_max = (y + 1) * dy + min(events[1])
+                t_min = t * dt
+                t_max = (t + 1) * dt
+                #
+                # print('x_min: ', x_min, 'x_max: ', x_max)
+                # print('y_min: ', y_min, 'y_max: ', y_max)
+                # print('t_min: ', t_min, 't_max: ', t_max)
 
-                t_min = t * dt + min(events[2])
-                t_max = (t + 1) * dt + min(events[2])
+                for event in events:
+                    if x_min <= event[0] <= x_max and y_min <= event[1] <= y_max and t_min <= event[2] <= t_max:
+                        selection.append(event)
 
-                print('x_min: ', x_min, 'x_max: ', x_max)
-                print('y_min: ', y_min, 'y_max: ', y_max)
-                print('t_min: ', t_min, 't_max: ', t_max)
-
-                selection = np.where(x_min <= events[0][:])
-                selection = np.where(x_max > selection[0][:])
-
-                selection = np.where(y_min <= selection[1][:])
-                selection = np.where(y_max > selection[1][:])
-
-                selection = np.where(t_min <= selection[2][:])
-                selection = np.where(t_max > selection[2][:])
 
 
                 event_list = []
@@ -119,10 +120,10 @@ def voxelize(events, nx, ny, nt):
                     event[2] -= t * dt
 
                     # make sure polarity is of format 1/-1
-                    if event[3] == 1:
-                        pass
-                    else:
-                        event[3] = -1
+                    # if event[3] == 1:
+                    #     pass
+                    # else:
+                    #     event[3] = -1
 
                     event_list.append(event)
 
@@ -149,8 +150,48 @@ def voxelize(events, nx, ny, nt):
 #
 #     return subarrays
 
-data = load("image_0005.bin")
-print(voxelize(data, 10, 10, 10))
+
+# nx = 10
+# ny = 10
+# nt = 10
+#
+#
+# x_min, x_max = points[:, 0].min(), points[:, 0].max()
+# y_min, y_max = points[:, 1].min(), points[:, 1].max()
+# t_min, t_max = points[:, 2].min(), points[:, 2].max()
+# x_bins = np.linspace(x_min, x_max, nx + 1)
+# y_bins = np.linspace(y_min, y_max, ny + 1)
+# t_bins = np.linspace(t_min, t_max, nt + 1)
+#
+# # digitize the points into the nx by ny by nt grid nodes
+# x_idx = np.digitize(points[:, 0], x_bins)
+# y_idx = np.digitize(points[:, 1], y_bins)
+# t_idx = np.digitize(points[:, 2], t_bins)
+#
+# # create an empty nested list to hold the grid data
+# grid_data = [[[[] for _ in range(nt)] for _ in range(ny)] for _ in range(nx)]
+
+# loop over the points and assign them to the appropriate grid node
+# for i, (x, y, t, p) in enumerate(points):
+#     x_idx_i = x_idx[i] - 1 if x_idx[i] > 0 else 0
+#     y_idx_i = y_idx[i] - 1 if y_idx[i] > 0 else 0
+#     t_idx_i = t_idx[i] - 1 if t_idx[i] > 0 else 0
+#     grid_data[x_idx_i][y_idx_i][t_idx_i].append((x, y, t, p))
+#
+#
+# # print the number of points in each grid node
+# for i in range(nx):
+#     for j in range(ny):
+#         for k in range(nt):
+#             print(f"Grid node ({i}, {j}, {k}): {len(grid_data[i, j, k])} points")
+#
+
+
+# data = load("image_0005.bin")
+# voxels = voxelize(data, 10, 10, 10)
+# patches = voxel2patch(voxels)
+
+
 # x, y, z = data[0], data[1], data[2]
 # c = data[3]
 # # extract the fourth dimension
