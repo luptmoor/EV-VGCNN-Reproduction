@@ -4,8 +4,9 @@ import logging
 import numpy as np
 import os
 import torch
+import matplotlib.pyplot as plt
 
-#from torch_geometric.data import Data
+# from torch_geometric.data import Data
 
 
 def load(raw_file: str):
@@ -21,7 +22,7 @@ def load(raw_file: str):
     all_ts = all_ts / 1e6  # µs -> s
     all_p = all_p.astype(np.float64)
     all_p[all_p == 0] = -1
-    events = np.column_stack((all_x, all_y, all_ts, all_p))
+    events = np.array([all_x, all_y, all_ts, all_p])
     # print(" y ", all_y)
     # print(" x ", all_x)
     # print(" p ", all_p)
@@ -74,10 +75,10 @@ def voxelize(events, nx, ny, nt):
     print('x range: ', min(events[0]), ' - ', max(events[0]))
     print('y range: ', min(events[1]), ' - ', max(events[1]))
     print('t range: ', min(events[2]), ' - ', max(events[2]))
+    print('Shape of events: ', events.shape)
 
-
-    dx = (max(events[0]) - min(events[0])) / nx
-    dy = (max(events[1]) - min(events[1])) / ny
+    dx = (max(events[0]) - min(events[0])) // nx
+    dy = (max(events[1]) - min(events[1])) // ny
     dt = (max(events[2]) - min(events[2])) / nt
 
     voxel_list = []
@@ -86,9 +87,29 @@ def voxelize(events, nx, ny, nt):
         print('voxel ', x)
         for y in range(ny):
             for t in range(nt):
-                selection = events[x * dx <= events[0] <= (x + 1) * dx, :, :]
-                selection = selection[:, y * dy <= events[1] <= (y + 1) * dy, :]
-                selection = selection[:, :, t * dt <= events[2] <= (t + 1) * dt]
+
+                x_min = x * dx + min(events[0])
+                x_max = (x + 1) * dx + min(events[0])
+
+                y_min = y * dy + min(events[1])
+                y_max = (y + 1) * dy + min(events[1])
+
+                t_min = t * dt + min(events[2])
+                t_max = (t + 1) * dt + min(events[2])
+
+                print('x_min: ', x_min, 'x_max: ', x_max)
+                print('y_min: ', y_min, 'y_max: ', y_max)
+                print('t_min: ', t_min, 't_max: ', t_max)
+
+                selection = np.where(x_min <= events[0][:])
+                selection = np.where(x_max > selection[0][:])
+
+                selection = np.where(y_min <= selection[1][:])
+                selection = np.where(y_max > selection[1][:])
+
+                selection = np.where(t_min <= selection[2][:])
+                selection = np.where(t_max > selection[2][:])
+
 
                 event_list = []
                 # change coordinates of events to local coordinates
@@ -109,5 +130,37 @@ def voxelize(events, nx, ny, nt):
 
     return voxel_list
 
+
+# def subdivide_array(events, nx, ny, nt):
+#     """
+#     Subdivides a 4D numpy array into a grid of nx by ny by nt subarrays.
+#     """
+#     # get the shape of the input array
+#     shape = events.shape
+#     print('shape: ', shape)
+#
+#     # compute the size of each subarray
+#     nx_size = shape[0] // nx
+#     ny_size = shape[1] // ny
+#     nt_size = shape[2] // nt
+#
+#     # reshape the array into a grid of subarrays
+#     subarrays = events.reshape((nx, nx_size, ny, ny_size, nt, nt_size, shape[3]))
+#
+#     return subarrays
+
 data = load("image_0005.bin")
 print(voxelize(data, 10, 10, 10))
+# x, y, z = data[0], data[1], data[2]
+# c = data[3]
+# # extract the fourth dimension
+# fig, ax = plt.subplots()
+# scatter = ax.scatter(x, y, c=c, cmap='viridis')
+# plt.colorbar(scatter)
+#
+# # set the labels for the axes
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+#
+# # show the plot
+# plt.show()
