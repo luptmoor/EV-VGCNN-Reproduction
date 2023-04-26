@@ -38,7 +38,6 @@ def voxel2patch(voxel_width, voxel_height, voxel_list):
         patch_list[i] = patch
         i += 1
 
-    print(len(patch_list), 'patches have been converted from the voxels.')
 
     # Return list of flattened patches
     return flatten(patch_list)

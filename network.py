@@ -7,9 +7,13 @@ from Preprocessing import voxel2patch
 import numpy as np
 from ReadData import BinaryFileDataset
 from torch.utils.data import Dataset, DataLoader
-import pickle
+import pickle as pick
 
 #from ReadData import load, voxelize
+
+def pickle(obj, filename):
+    with open('Pickle Shelf/' + filename, 'wb') as file:
+        pick.dump(obj, file)
 
 def load_dataloader(number):
     folder_dirs = [
@@ -120,7 +124,7 @@ def load_dataloader(number):
     dataset = BinaryFileDataset(path)
 
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
-    pickle()
+    pickle(dataloader, path)
     return dataloader
 
 def square_distance(src, dst):

@@ -123,8 +123,11 @@ class BinaryFileDataset(Dataset):
                       'windsor_chair' : 98,
                       'wrench' : 99,
                       'yin_yang' : 100}
-            
+
+        datalength = len(self.filenames)
+
         for filename in self.filenames:
+            print('Loading: ', filename)
             full_path = filename
             f = open(full_path, 'rb')
             raw_data = np.fromfile(f, dtype=np.uint8)
@@ -169,11 +172,12 @@ class BinaryFileDataset(Dataset):
             dx = int((x_max - x_min) // grid_size[0])
             dy = int((y_max - y_min) // grid_size[1])
             dt = np.round(float((t_max - t_min) / grid_size[2]), 5)
-            print('Voxel size: ', dx, dy, float(dt))
+            #print('Voxel size: ', dx, dy, float(dt))
 
             # Put a uniform 3D grid over the space spanned by x, y and t
             voxels = []
             for i in range(grid_size[0]):
+                print('Row', i, 'out of', grid_size[0])
                 for j in range(grid_size[1]):
                     for k in range(grid_size[2]):
                         voxel_x_min = x_min + i * dx
@@ -183,30 +187,39 @@ class BinaryFileDataset(Dataset):
                         voxel_t_min = t_min + k * dt
                         voxel_t_max = voxel_t_min + dt
                         voxel_events = []
+
+                        # Select Events
                         for event in events:
                             if (voxel_x_min <= event[0] < voxel_x_max
                                     and voxel_y_min <= event[1] < voxel_y_max
                                     and voxel_t_min <= event[2] < voxel_t_max):
                                 voxel_events.append(event.tolist())
-                        if len(voxel_events) >= 10:
-                            for event in voxel_events:  # Change coordinates to local coordinates
-                                event[0] -= i * dx
-                                event[1] -= j * dy
-                                event[2] -= k * dt
-                            voxels.append({
-                                'numbering': [i, j, k],
-                                'events': voxel_events
-                            })
+
+                        # Change coordinates to local coordinates
+                        for event in voxel_events:
+                            event[0] -= i * dx
+                            event[1] -= j * dy
+                            event[2] -= k * dt
+
+                        # Create list of all voxels
+                        voxels.append({
+                            'numbering': [i, j, k],
+                            'events': voxel_events,
+                            'relevance': len(voxel_events)
+                        })
+
+            Np = N // 4 # use top 25% of voxels
+            voxels_by_relevance = sorted(voxels, key=lambda voxel: voxel['relevance'])
+            voxels = voxels_by_relevance[:Np]
 
             # Print the list of voxels with their numbering and events
-            for voxel in voxels:
-                print(f"Voxel {voxel['numbering']}:")
-                for event in voxel['events']:
-                    print(event)
-                print()
+            # for voxel in voxels:
+            #     print(f"Voxel {voxel['numbering']}:")
+            #     for event in voxel['events']:
+            #         print(event)
+            #     print()
 
-            Np = len(voxels)
-            print(Np, ' voxels selected from ', N, ' voxels.')
+            # print(Np, ' voxels selected from ', N, ' voxels.')
 
             # Split voxels into coordinate vectors and voxel vectors
             coordinate_list = []
@@ -226,7 +239,7 @@ class BinaryFileDataset(Dataset):
             # plt.colorbar()
             # plt.show()
 
-            self.data.append(torch.cat(coordinate_vector, feature_vector))
+            self.data.append(torch.cat((coordinate_vector, feature_vector), dim=1))
 
             # stopper = input('All good till here')
 
@@ -236,9 +249,14 @@ class BinaryFileDataset(Dataset):
             label = np.zeros(101)
             label[label_idx] = 1
             self.labels.append(label)
-        
+
+        self.data = torch.tensor(self.data)
         self.labels = torch.tensor(self.labels)
 
+        # Save to hard drive
+        self.data.save('database/' + folder_dir + '_data.pt')
+        self.labels.save('database/' + folder_dir + '_labels.pt')
+        print('Saved to hard drive.')
     
     def __len__(self):
         return len(self.filenames)
