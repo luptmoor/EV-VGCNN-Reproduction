@@ -2,12 +2,123 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from event_integration import voxel2patch
+from Preprocessing import voxel2patch
 #from dataloader import load_dataloader
 import numpy as np
+from ReadData import BinaryFileDataset
+from torch.utils.data import Dataset, DataLoader
 
+#from ReadData import load, voxelize
 
-from ReadData import load, voxelize
+def load_dataloader(number):
+    folder_dirs = [
+        r"./Caltech101/accordion",
+        r"./Caltech101/airplanes",
+        r"./Caltech101/anchor",
+        r"./Caltech101/ant",
+        r"./Caltech101/BACKGROUND_Google",
+        r"./Caltech101/barrel",
+        r"./Caltech101/bass",
+        r"./Caltech101/beaver",
+        r"./Caltech101/binocular",
+        r"./Caltech101/bonsai",
+        r"./Caltech101/brain",
+        r"./Caltech101/brontosaurus",
+        r"./Caltech101/buddha",
+        r"./Caltech101/butterfly",
+        r"./Caltech101/camera",
+        r"./Caltech101/cannon",
+        r"./Caltech101/car_side",
+        r"./Caltech101/ceiling_fan",
+        r"./Caltech101/cellphone",
+        r"./Caltech101/chair",
+        r"./Caltech101/chandelier",
+        r"./Caltech101/cougar_body",
+        r"./Caltech101/cougar_face",
+        r"./Caltech101/crab",
+        r"./Caltech101/crayfish",
+        r"./Caltech101/crocodile",
+        r"./Caltech101/crocodile_head",
+        r"./Caltech101/cup",
+        r"./Caltech101/dalmatian",
+        r"./Caltech101/dollar_bill",
+        r"./Caltech101/dolphin",
+        r"./Caltech101/dragonfly",
+        r"./Caltech101/electric_guitar",
+        r"./Caltech101/elephant",
+        r"./Caltech101/emu",
+        r"./Caltech101/euphonium",
+        r"./Caltech101/ewer",
+        r"./Caltech101/Faces_easy",
+        r"./Caltech101/ferry",
+        r"./Caltech101/flamingo",
+        r"./Caltech101/flamingo_head",
+        r"./Caltech101/garfield",
+        r"./Caltech101/gerenuk",
+        r"./Caltech101/gramophone",
+        r"./Caltech101/grand_piano",
+        r"./Caltech101/hawksbill",
+        r"./Caltech101/headphone",
+        r"./Caltech101/hedgehog",
+        r"./Caltech101/helicopter",
+        r"./Caltech101/ibis",
+        r"./Caltech101/inline_skate",
+        r"./Caltech101/joshua_tree",
+        r"./Caltech101/kangaroo",
+        r"./Caltech101/ketch",
+        r"./Caltech101/lamp",
+        r"./Caltech101/laptop",
+        r"./Caltech101/Leopards",
+        r"./Caltech101/llama",
+        r"./Caltech101/lobster",
+        r"./Caltech101/lotus",
+        r"./Caltech101/mandolin",
+        r"./Caltech101/mayfly",
+        r"./Caltech101/menorah",
+        r"./Caltech101/metronome",
+        r"./Caltech101/minaret",
+        r"./Caltech101/Motorbikes",
+        r"./Caltech101/nautilus",
+        r"./Caltech101/octopus",
+        r"./Caltech101/okapi",
+        r"./Caltech101/pagoda",
+        r"./Caltech101/panda",
+        r"./Caltech101/pigeon",
+        r"./Caltech101/pizza",
+        r"./Caltech101/platypus",
+        r"./Caltech101/pyramid",
+        r"./Caltech101/revolver",
+        r"./Caltech101/rhino",
+        r"./Caltech101/rooster",
+        r"./Caltech101/saxophone",
+        r"./Caltech101/schooner",
+        r"./Caltech101/scissors",
+        r"./Caltech101/scorpion",
+        r"./Caltech101/sea_horse",
+        r"./Caltech101/snoopy",
+        r"./Caltech101/soccer_ball",
+        r"./Caltech101/stapler",
+        r"./Caltech101/starfish",
+        r"./Caltech101/stegosaurus",
+        r"./Caltech101/stop_sign",
+        r"./Caltech101/strawberry",
+        r"./Caltech101/sunflower",
+        r"./Caltech101/tick",
+        r"./Caltech101/trilobite",
+        r"./Caltech101/umbrella",
+        r"./Caltech101/watch",
+        r"./Caltech101/water_lilly",
+        r"./Caltech101/wheelchair",
+        r"./Caltech101/wild_cat",
+        r"./Caltech101/windsor_chair",
+        r"./Caltech101/wrench",
+        r"./Caltech101/yin_yang"
+    ]
+
+    path = folder_dirs[number]
+    dataset = BinaryFileDataset(path)
+    return DataLoader(dataset, batch_size=16, shuffle=True)
+
 def square_distance(src, dst):
     B, N, _ = src.shape
     _, M, _ = dst.shape
@@ -43,7 +154,7 @@ def knn(nsample, xyz, new_xyz, cosine=False):
     if cosine:
         dist = cosine_similarity(xyz, new_xyz)
     else:
-        dist = square_distance(xyz, new_xyz)
+        dist =  square_distance(xyz, new_xyz)
     idx = torch.topk(dist, k=nsample, dim=-1, largest=False)[1]  # [B, N, nsample]
     return idx
 
@@ -248,50 +359,4 @@ class VGCNN_MFRL(nn.Module):
         return output_s
 
 ########################## END OF DEFINITION ################################
-
-# 1. Load Data (Serban)
-# 2. Voxelize (Serban)
-#    example: xc  yc tc   x0 y0 t0 p0   x1  y1 t1 p1 (events)           xc means x-coordinate of the voxel
-#voxel_list = [[1, 2, 3, [[1, 2, 3, -1], [2, 3, 1, 1]]]]
-vec = torch.Tensor([0, 2, 3])
-data = load("image_0005.bin")
-voxel_list = voxelize(data, 10, 10, 10)
-
-voxel_width = 23.3
-voxel_height = 10
-# 3. Graph construction:
-# 3A Coordinate vector (takes first 3 entries of voxel list)
-
-coordinate_vector = torch.Tensor(voxel_list[:][:2])
-# 3B Feature vector (takes last entry of voxel_list (events) and integrates them)
-feature_vector = voxel2patch(voxel_width, voxel_height, voxel_list[:][3])
-
-# (4) Feed forward into VGCNN (not actually needed here but cool to check if it works)
-model_VGCNN = VGCNN_MFRL()
-prediction = model_VGCNN.forward(coordinate_vector, feature_vector)
-print(prediction)
-
-# 5 Data Loader (pair input vectors and ground truth vectors, also specify batch size)
-training_data_loader, validation_data_loader = load_dataloader(batch_size=32)  # to be implemented, comment from here onwards if annoying
-
-# 5 Training loop (Sergio ( ͡° ͜ʖ ͡°) )
-
-num_epochs = 20  # (idk if ideal)
-optimizer = optim.Adam(model_VGCNN.parameters(), lr=1e-3) # Stochastic Gradient Descent (idk if this is ideal)
-loss_fn = nn.MSELoss()  # Mean-squared error (idk if this ideal, but probably)
-
-for epoch in range(num_epochs):
-    print('Epoch ', epoch+1)
-    for i, data in enumerate(training_data_loader):
-        inputs, labels = data
-        outputs = model_VGCNN.forward(input)
-        loss = loss_fn(outputs, labels)
-        loss.backward()  # backprop
-        optimizer.step()  # SGD
-
-print('Done')
-
-
-
-
 
