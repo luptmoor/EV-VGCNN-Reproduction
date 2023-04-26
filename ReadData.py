@@ -4,11 +4,15 @@ import logging
 import numpy as np
 import os
 import torch
-
+import matplotlib.pyplot as plt
 
 from torch.utils.data import Dataset, DataLoader
 from torch_geometric.data import Data
 from torch.nn.utils.rnn import pad_sequence
+
+from Preprocessing import voxel2patch, voxelize, plot_events
+
+import numpy as N
 
 
 class BinaryFileDataset(Dataset):
@@ -134,29 +138,98 @@ class BinaryFileDataset(Dataset):
             all_p = all_p.astype(np.float64)
             all_p[all_p == 0] = -1
             events = np.column_stack((all_x, all_y, all_ts, all_p))
-            events_padded = torch.tensor(events[:self.max_length])
+            events = torch.tensor(events[:self.max_length])
 
             # every image is voxelized and then added to dataloader
-            voxel_list = voxelize(events_padded, 10, 10, 10)
+            # dx, dy, dt, voxel_list = voxelize(events_padded, 8, 8, 8)
+            # print('Voxels of size: ', dx, dy, dt)
+            # N = len(voxel_list)
+            # print('Sample voxel: ',  voxel_list[7])
+            #
+            #
+            # #voxel selection:
+            # selected_voxels = []
+            # for voxel in voxel_list:
+            #     if not len(voxel[3]) == 0:
+            #         selected_voxels.append(voxel)
+            # Np = len(selected_voxels)
+            # print(Np, 'out of', N, 'voxels have been selected (Np).')
+            # print('Sample voxel: ',  selected_voxels[3])
+            #
+            # points = []
+            # for event in events:
+            #     points.append(event.tolist()[0:4])
+            # plot_events(points, dx, dy, dt)
 
-            #voxel selection:
-            selected_voxels = []
-            for voxel in voxel_list:
-                if not len(voxel[3]) == 0:
-                    selected_voxels.append(voxel)
-            print(len(selected_voxels), 'have been selected.')
+            grid_size = [8, 8, 8]
+            N = grid_size[0] * grid_size[1] * grid_size[2]
 
-            # coordinate vectors:
-            coordinate_list = [voxel[0:3] for voxel in selected_voxels]
+            x_min, y_min, t_min = torch.min(events[:, :3], dim=0).values
+            x_max, y_max, t_max = torch.max(events[:, :3], dim=0).values
+            dx = int((x_max - x_min) // grid_size[0])
+            dy = int((y_max - y_min) // grid_size[1])
+            dt = np.round(float((t_max - t_min) / grid_size[2]), 5)
+            print('Voxel size: ', dx, dy, float(dt))
+
+            # Put a uniform 3D grid over the space spanned by x, y and t
+            voxels = []
+            for i in range(grid_size[0]):
+                for j in range(grid_size[1]):
+                    for k in range(grid_size[2]):
+                        voxel_x_min = x_min + i * dx
+                        voxel_x_max = voxel_x_min + dx
+                        voxel_y_min = y_min + j * dy
+                        voxel_y_max = voxel_y_min + dy
+                        voxel_t_min = t_min + k * dt
+                        voxel_t_max = voxel_t_min + dt
+                        voxel_events = []
+                        for event in events:
+                            if (voxel_x_min <= event[0] < voxel_x_max
+                                    and voxel_y_min <= event[1] < voxel_y_max
+                                    and voxel_t_min <= event[2] < voxel_t_max):
+                                voxel_events.append(event.tolist())
+                        if len(voxel_events) >= 10:
+                            for event in voxel_events:  # Change coordinates to local coordinates
+                                event[0] -= i * dx
+                                event[1] -= j * dy
+                                event[2] -= k * dt
+                            voxels.append({
+                                'numbering': [i, j, k],
+                                'events': voxel_events
+                            })
+
+            # Print the list of voxels with their numbering and events
+            for voxel in voxels:
+                print(f"Voxel {voxel['numbering']}:")
+                for event in voxel['events']:
+                    print(event)
+                print()
+
+            Np = len(voxels)
+            print(Np, ' voxels selected from ', N, ' voxels.')
+
+            # Split voxels into coordinate vectors and voxel vectors
+            coordinate_list = []
+            voxel_list = []
+            for voxel in voxels:
+                coordinate_list.append(voxel['numbering'])
+                voxel_list.append(voxel['events'])
+
             print('Coordinate vector: ')
             print(coordinate_list)
+            coordinate_vector = torch.tensor(coordinate_list)
 
-            # voxel2patch:
-            feature_vector = voxel2patch(23, 10, voxel[3])
-            print(feature_vector)
+            feature_vector = voxel2patch(dx, dy, voxel_list)
+            print('Feature vector: ')
+            print(feature_vector.shape)
+            # plt.imshow(feature_vector, cmap='viridis')
+            # plt.colorbar()
+            # plt.show()
 
-            self.data.append(events_padded)
-            
+            self.data.append(torch.cat(coordinate_vector, feature_vector))
+
+            # stopper = input('All good till here')
+
             # Get the parent directory name and one-hot encode it as the label
             folder_name = os.path.basename(os.path.dirname(filename))
             label_idx = label_dict[folder_name]

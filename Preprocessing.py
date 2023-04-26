@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def delta(x, y):
     if x == 0 and y == 0:
@@ -21,7 +23,7 @@ def voxel2patch(voxel_width, voxel_height, voxel_list):
     flatten = nn.Flatten()
 
     patch_list = torch.zeros(len(voxel_list), voxel_width, voxel_height)
-    print(patch_list)
+
     i = 0
     for voxel in voxel_list:
         event_list = voxel # Voxels are just lists of the events inside them
@@ -32,7 +34,7 @@ def voxel2patch(voxel_width, voxel_height, voxel_list):
         for x in range(voxel_width):
             for y in range(voxel_height):
                 patch[x, y] = np.sum([delta(x - event[0], y - event[1]) * event[2] * event[3] for event in event_list])
-        print(patch)
+
         patch_list[i] = patch
         i += 1
 
@@ -58,7 +60,7 @@ def voxelize(events, nx, ny, nt):
     voxel_list = []
 
     for x in range(nx):
-        print('row ', x, ' / 10')
+        print('row ', x, ' / ', nx)
         for y in range(ny):
             for t in range(nt):
                 selection = []
@@ -80,28 +82,43 @@ def voxelize(events, nx, ny, nt):
                         selection.append(event)
 
 
-
-                event_list = []
                 # change coordinates of events to local coordinates
                 for event in selection:
                     event[0] -= x * dx
                     event[1] -= y * dy
                     event[2] -= t * dt
 
-                    # make sure polarity is of format 1/-1
-                    # if event[3] == 1:
-                    #     pass
-                    # else:
-                    #     event[3] = -1
-
-                    event_list.append(event)
-
-                voxel_list.append([x, y, t, event_list])
+                voxel_list.append([x, y, t, selection])
 
     print(len(voxel_list), ' voxels have been created.')
     print('Verification: input grid was', nx, 'by', ny, 'by', nt, '=', nx * ny * nt)
     print('Voxel size: ', dx, dy, dt)
-    return voxel_list
+    return dx, dy, dt, voxel_list
+
+def plot_events(points, dx, dy, dz):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter([p[0] for p in points], [p[1] for p in points], [p[2] for p in points])
+
+    # Add grid lines
+    x_range = max([p[0] for p in points]) - min([p[0] for p in points])
+    y_range = max([p[1] for p in points]) - min([p[1] for p in points])
+    z_range = max([p[2] for p in points]) - min([p[2] for p in points])
+    x_ticks = [i for i in range(int(min([p[0] for p in points])), int(max([p[0] for p in points])) + 1, dx)]
+    y_ticks = [i for i in range(int(min([p[1] for p in points])), int(max([p[1] for p in points])) + 1, dy)]
+    z_ticks = [i for i in range(int(min([p[2] for p in points])), int(max([p[2] for p in points])) + 1, dz)]
+    ax.set_xticks(x_ticks)
+    ax.set_yticks(y_ticks)
+    ax.set_zticks(z_ticks)
+    ax.xaxis.set_tick_params(pad=10)
+    ax.yaxis.set_tick_params(pad=10)
+    ax.zaxis.set_tick_params(pad=10)
+    ax.grid(True)
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
 
 
 # "Unit Test"
