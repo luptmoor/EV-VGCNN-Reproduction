@@ -235,9 +235,12 @@ class BinaryFileDataset(Dataset):
             feature_vector = voxel2patch(dx, dy, voxel_list)
             print('Feature vector: ')
             print(feature_vector.shape)
-            # plt.imshow(feature_vector, cmap='viridis')
-            # plt.colorbar()
-            # plt.show()
+            plt.imshow(feature_vector, cmap='viridis')
+            plt.colorbar()
+            plt.xlabel('Features')
+            plt.ylabel('Voxels')
+
+            plt.show()
 
             self.data.append(torch.cat((coordinate_vector, feature_vector), dim=1))
 
